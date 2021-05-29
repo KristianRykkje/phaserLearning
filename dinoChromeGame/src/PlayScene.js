@@ -172,7 +172,6 @@ class PlayScene extends Phaser.Scene {
       this.dino.body.offset.y = 0;
 
       this.jumpSound.play();
-      this.dino.setTexture("dino", 0);
       this.dino.setVelocityY(-1600);
     });
     this.input.keyboard.on("keydown-DOWN", () => {
