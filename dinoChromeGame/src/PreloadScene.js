@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import images from "./assets/*.png";
+import sounds from "./assets/*.m4a";
 
 class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -6,48 +8,48 @@ class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.audio("jump", "assets/jump.m4a");
-    this.load.audio("hit", "assets/hit.m4a");
-    this.load.audio("reach", "assets/reach.m4a");
+    this.load.audio("jump", sounds.jump);
+    this.load.audio("hit", sounds.hit);
+    this.load.audio("reach", sounds.reach);
 
-    this.load.image("ground", "assets/ground.png");
-    this.load.image("dino-idle", "assets/dino-idle.png");
-    this.load.image("dino-hurt", "assets/dino-hurt.png");
-    this.load.image("restart", "assets/restart.png");
-    this.load.image("game-over", "assets/game-over.png");
-    this.load.image("cloud", "assets/cloud.png");
+    this.load.image("ground", images.ground);
+    this.load.image("dino_idle", images.dino_idle);
+    this.load.image("dino_hurt", images.dino_hurt);
+    this.load.image("restart", images.restart);
+    this.load.image("game_over", images.game_over);
+    this.load.image("cloud", images.cloud);
 
-    this.load.spritesheet("star", "assets/stars.png", {
+    this.load.spritesheet("star", images.stars, {
       frameWidth: 9,
       frameHeight: 9,
     });
 
-    this.load.spritesheet("moon", "assets/moon.png", {
+    this.load.spritesheet("moon", images.moon, {
       frameWidth: 20,
       frameHeight: 40,
     });
 
-    this.load.spritesheet("dino", "assets/dino-run.png", {
+    this.load.spritesheet("dino", images.dino_run, {
       frameWidth: 88,
       frameHeight: 94,
     });
 
-    this.load.spritesheet("dino-down", "assets/dino-down.png", {
+    this.load.spritesheet("dino_down", images.dino_down, {
       frameWidth: 118,
       frameHeight: 94,
     });
 
-    this.load.spritesheet("enemy-bird", "assets/enemy-bird.png", {
+    this.load.spritesheet("enemy_bird", images.enemy_bird, {
       frameWidth: 92,
       frameHeight: 77,
     });
 
-    this.load.image("obsticle-1", "assets/cactuses_small_1.png");
-    this.load.image("obsticle-2", "assets/cactuses_small_2.png");
-    this.load.image("obsticle-3", "assets/cactuses_small_3.png");
-    this.load.image("obsticle-4", "assets/cactuses_big_1.png");
-    this.load.image("obsticle-5", "assets/cactuses_big_2.png");
-    this.load.image("obsticle-6", "assets/cactuses_big_3.png");
+    this.load.image("obsticle_1", images.cactuses_small_1);
+    this.load.image("obsticle_2", images.cactuses_small_2);
+    this.load.image("obsticle_3", images.cactuses_small_3);
+    this.load.image("obsticle_4", images.cactuses_big_1);
+    this.load.image("obsticle_5", images.cactuses_big_2);
+    this.load.image("obsticle_6", images.cactuses_big_3);
   }
 
   create() {

@@ -11,10 +11,12 @@ class PlayScene extends Phaser.Scene {
 
     this.ground = this.add.tileSprite(0, height, width, 26, "ground").setOrigin(0, 1);
 
-    this.dino = this.physics.add.sprite(0, height, "dino-  idle").setOrigin(0, 1);
+    this.dino = this.physics.add.sprite(0, height, "dino-idle").setCollideWorldBounds(true).setGravityY(5000).setOrigin(0, 1);
   }
 
-  update() {}
+  update() {
+    this.ground.tilePositionX += this.gameSpeed;
+  }
 }
 
 export default PlayScene;
