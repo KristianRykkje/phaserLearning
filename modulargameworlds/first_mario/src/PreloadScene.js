@@ -1,6 +1,5 @@
 import Phaser from "phaser";
 import images from "./assets/*.png";
-import sounds from "./assets/*.m4a";
 
 class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -9,28 +8,30 @@ class PreloadScene extends Phaser.Scene {
 
   preload() {
     // "this" === Phaser.Scene
-    this.load.image(
-      "repeating-background",
-      "https://www.mikewesthad.com/phaser-3-tilemap-blog-posts/post-1/assets/images/escheresque_dark.png",
-    );
+    this.load.image("mario_tileset", images.mario_tileset);
   }
 
   create() {
-    // You can access the game's config to read the width & height
-    const { width, height } = this.sys.game.config;
-
-    // Creating a repeating background sprite
-    const bg = this.add.tileSprite(0, 0, width, height, "repeating-background");
-    bg.setOrigin(0, 0);
-
-    // In v3, you can chain many methods, so you can create text and configure it in one "line"
-    this.add
-      .text(width / 2, height / 2, "hello\nphaser 3\ntemplate", {
-        font: "100px monospace",
-        color: "white",
-      })
-      .setOrigin(0.5, 0.5)
-      .setShadow(5, 5, "#5588EE", 0, true, true);
+    const level = [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 1, 2, 3, 0, 0, 0, 1, 2, 3, 0],
+      [0, 5, 6, 7, 0, 0, 0, 5, 6, 7, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 14, 13, 14, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 14, 14, 14, 14, 14, 0, 0, 0, 15],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 15],
+      [35, 36, 37, 0, 0, 0, 0, 0, 15, 15, 15],
+      [39, 39, 39, 39, 39, 39, 39, 39, 39, 39, 39],
+    ];
+    const map = this.make.tilemap({
+      data: level,
+      tileWidth: 16,
+      tileHeight: 16,
+    });
+    const tiles = map.addTilesetImage("mario_tileset");
+    const layer = map.createStaticLayer(0, tiles, 0, 0);
   }
 }
 
