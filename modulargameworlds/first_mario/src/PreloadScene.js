@@ -8,52 +8,29 @@ class PreloadScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.audio("jump", sounds.jump);
-    this.load.audio("hit", sounds.hit);
-    this.load.audio("reach", sounds.reach);
-
-    this.load.image("ground", images.ground);
-    this.load.image("dino_idle", images.dino_idle);
-    this.load.image("dino_hurt", images.dino_hurt);
-    this.load.image("restart", images.restart);
-    this.load.image("game_over", images.game_over);
-    this.load.image("cloud", images.cloud);
-
-    this.load.spritesheet("star", images.stars, {
-      frameWidth: 9,
-      frameHeight: 9,
-    });
-
-    this.load.spritesheet("moon", images.moon, {
-      frameWidth: 20,
-      frameHeight: 40,
-    });
-
-    this.load.spritesheet("dino", images.dino_run, {
-      frameWidth: 88,
-      frameHeight: 94,
-    });
-
-    this.load.spritesheet("dino_down", images.dino_down, {
-      frameWidth: 118,
-      frameHeight: 94,
-    });
-
-    this.load.spritesheet("enemy_bird", images.enemy_bird, {
-      frameWidth: 92,
-      frameHeight: 77,
-    });
-
-    this.load.image("obsticle_1", images.cactuses_small_1);
-    this.load.image("obsticle_2", images.cactuses_small_2);
-    this.load.image("obsticle_3", images.cactuses_small_3);
-    this.load.image("obsticle_4", images.cactuses_big_1);
-    this.load.image("obsticle_5", images.cactuses_big_2);
-    this.load.image("obsticle_6", images.cactuses_big_3);
+    // "this" === Phaser.Scene
+    this.load.image(
+      "repeating-background",
+      "https://www.mikewesthad.com/phaser-3-tilemap-blog-posts/post-1/assets/images/escheresque_dark.png",
+    );
   }
 
   create() {
-    this.scene.start("PlayScene");
+    // You can access the game's config to read the width & height
+    const { width, height } = this.sys.game.config;
+
+    // Creating a repeating background sprite
+    const bg = this.add.tileSprite(0, 0, width, height, "repeating-background");
+    bg.setOrigin(0, 0);
+
+    // In v3, you can chain many methods, so you can create text and configure it in one "line"
+    this.add
+      .text(width / 2, height / 2, "hello\nphaser 3\ntemplate", {
+        font: "100px monospace",
+        color: "white",
+      })
+      .setOrigin(0.5, 0.5)
+      .setShadow(5, 5, "#5588EE", 0, true, true);
   }
 }
 
