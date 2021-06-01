@@ -1,45 +1,34 @@
-import Phaser from "phaser";
-
 /**
- * A class that wraps up our 2D platforming player logic. It creates, animates and moves a sprite in
- * response to WASD/arrow keys. Call its update method from the scene's update and call its destroy
+ * A class that wraps up our top down player logic. It creates, animates and moves a sprite in
+ * response to WASD keys. Call its update method from the scene's update and call its destroy
  * method when you're done with the player.
  */
 export default class Player {
   constructor(scene, x, y) {
     this.scene = scene;
 
-    // Create the animations we need from the player spritesheet
     const anims = scene.anims;
     anims.create({
-      key: "player-idle",
-      frames: anims.generateFrameNumbers("player", { start: 0, end: 3 }),
-      frameRate: 3,
+      key: "player-walk",
+      frames: anims.generateFrameNumbers("characters", { start: 46, end: 49 }),
+      frameRate: 8,
       repeat: -1,
     });
     anims.create({
-      key: "player-run",
-      frames: anims.generateFrameNumbers("player", { start: 8, end: 15 }),
-      frameRate: 12,
+      key: "player-walk-back",
+      frames: anims.generateFrameNumbers("characters", { start: 65, end: 68 }),
+      frameRate: 8,
       repeat: -1,
     });
 
-    // Create the physics-based sprite that we will move around and animate
     this.sprite = scene.physics.add
-      .sprite(x, y, "player", 0)
-      .setDrag(1000, 0)
-      .setMaxVelocity(300, 400);
+      .sprite(x, y, "characters", 0)
+      .setSize(22, 33)
+      .setOffset(23, 27);
 
-    // Track the arrow keys & WASD
-    const { LEFT, RIGHT, UP, W, A, D } = Phaser.Input.Keyboard.KeyCodes;
-    this.keys = scene.input.keyboard.addKeys({
-      left: LEFT,
-      right: RIGHT,
-      up: UP,
-      w: W,
-      a: A,
-      d: D,
-    });
+    this.sprite.anims.play("player-walk-back");
+
+    this.keys = scene.input.keyboard.createCursorKeys();
   }
 
   freeze() {
@@ -49,34 +38,42 @@ export default class Player {
   update() {
     const keys = this.keys;
     const sprite = this.sprite;
-    const onGround = sprite.body.blocked.down;
-    const acceleration = onGround ? 600 : 200;
+    const speed = 300;
+    const prevVelocity = sprite.body.velocity.clone();
 
-    // Apply horizontal acceleration when left/a or right/d are applied
-    if (keys.left.isDown || keys.a.isDown) {
-      sprite.setAccelerationX(-acceleration);
-      // No need to have a separate set of graphics for running to the left & to the right. Instead
-      // we can just mirror the sprite.
+    // Stop any previous movement from the last frame
+    sprite.body.setVelocity(0);
+
+    // Horizontal movement
+    if (keys.left.isDown) {
+      sprite.body.setVelocityX(-speed);
       sprite.setFlipX(true);
-    } else if (keys.right.isDown || keys.d.isDown) {
-      sprite.setAccelerationX(acceleration);
+    } else if (keys.right.isDown) {
+      sprite.body.setVelocityX(speed);
       sprite.setFlipX(false);
-    } else {
-      sprite.setAccelerationX(0);
     }
 
-    // Only allow the player to jump if they are on the ground
-    if (onGround && (keys.up.isDown || keys.w.isDown)) {
-      sprite.setVelocityY(-500);
+    // Vertical movement
+    if (keys.up.isDown) {
+      sprite.body.setVelocityY(-speed);
+    } else if (keys.down.isDown) {
+      sprite.body.setVelocityY(speed);
     }
 
-    // Update the animation/texture based on the state of the player
-    if (onGround) {
-      if (sprite.body.velocity.x !== 0) sprite.anims.play("player-run", true);
-      else sprite.anims.play("player-idle", true);
+    // Normalize and scale the velocity so that sprite can't move faster along a diagonal
+    sprite.body.velocity.normalize().scale(speed);
+
+    // Update the animation last and give left/right/down animations precedence over up animations
+    if (keys.left.isDown || keys.right.isDown || keys.down.isDown) {
+      sprite.anims.play("player-walk", true);
+    } else if (keys.up.isDown) {
+      sprite.anims.play("player-walk-back", true);
     } else {
       sprite.anims.stop();
-      sprite.setTexture("player", 10);
+
+      // If we were moving & now we're not, then pick a single idle frame to use
+      if (prevVelocity.y < 0) sprite.setTexture("characters", 65);
+      else sprite.setTexture("characters", 46);
     }
   }
 
