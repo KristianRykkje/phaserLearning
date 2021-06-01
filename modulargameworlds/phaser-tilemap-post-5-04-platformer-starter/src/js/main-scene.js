@@ -4,31 +4,26 @@ import createRotatingPlatform from "./create-rotating-platform.js";
 import levelJson from "../assets/tilemaps/level.json";
 import kenneyTilset64pxExtruded from "../assets/tilesets/kenney-tileset-64px-extruded.png";
 import images from "../assets/images/*.png";
+import emojiPng from "../assets/atlases/emoji.png";
+import emojiJson from "../assets/atlases/emoji.json";
+import industrialPlayer from "../assets/spritesheets/0x72-industrial-player-32px-extruded.png";
 
 export default class MainScene extends Phaser.Scene {
   preload() {
     this.load.tilemapTiledJSON("map", levelJson);
     this.load.image("kenney-tileset-64px-extruded", kenneyTilset64pxExtruded);
 
-    this.load.image("wooden-plank", "../assets/images/wooden-plank.png");
-    this.load.image("block", "../assets/images/block.png");
+    this.load.image("wooden-plank", images.wooden_plank);
+    this.load.image("block", images.block);
 
-    this.load.spritesheet(
-      "player",
-      "../assets/spritesheets/0x72-industrial-player-32px-extruded.png",
-      {
-        frameWidth: 32,
-        frameHeight: 32,
-        margin: 1,
-        spacing: 2,
-      },
-    );
+    this.load.spritesheet("player", industrialPlayer, {
+      frameWidth: 32,
+      frameHeight: 32,
+      margin: 1,
+      spacing: 2,
+    });
 
-    this.load.atlas(
-      "emoji",
-      "../assets/atlases/emoji.png",
-      "../assets/atlases/emoji.json",
-    );
+    this.load.atlas("emoji", emojiPng, emojiJson);
   }
 
   create() {
@@ -51,6 +46,13 @@ export default class MainScene extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
     this.matter.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+    // The spawn point is set using a point object inside of Tiled (within the "Spawn" object layer)
+    const { x, y } = map.findObject("Spawn", obj => obj.name === "Spawn Point");
+    this.player = new Player(this, x, y);
+
+    // Smoothly follow the player
+    this.cameras.main.startFollow(this.player.sprite, false, 0.5, 0.5);
 
     const help = this.add.text(16, 16, "Arrows/WASD to move the player.", {
       fontSize: "18px",

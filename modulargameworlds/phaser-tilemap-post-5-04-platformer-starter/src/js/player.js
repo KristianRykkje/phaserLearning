@@ -49,13 +49,107 @@ export default class Player {
       frameRate: 12,
       repeat: -1,
     });
+
+    // Track the keys
+    const { LEFT, RIGHT, UP, A, D, W } = Phaser.Input.Keyboard.KeyCodes;
+    this.leftInput = new MultiKey(scene, [LEFT, A]);
+    this.rightInput = new MultiKey(scene, [RIGHT, D]);
+    this.jumpInput = new MultiKey(scene, [UP, W]);
+
+    this.scene.events.on("update", this.update, this);
+    // Track which sensors are touching something
+    this.isTouching = { left: false, right: false, ground: false };
+
+    // Jumping is going to have a cooldown
+    this.canJump = true;
+    this.jumpCooldownTimer = null;
+
+    // Before matter's update, reset our record of what surfaces the player is touching.
+    scene.matter.world.on("beforeupdate", this.resetTouching, this);
+
+    // If a sensor just started colliding with something, or it continues to collide with something,
+    // call onSensorCollide
+    scene.matterCollision.addOnCollideStart({
+      objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right],
+      callback: this.onSensorCollide,
+      context: this,
+    });
+    scene.matterCollision.addOnCollideActive({
+      objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right],
+      callback: this.onSensorCollide,
+      context: this,
+    });
+  }
+
+  onSensorCollide({ bodyA, bodyB, pair }) {
+    if (bodyB.isSensor) return; // We only care about collisions with physical objects
+    if (bodyA === this.sensors.left) {
+      this.isTouching.left = true;
+      if (pair.separation > 0.5) this.sprite.x += pair.separation - 0.5;
+    } else if (bodyA === this.sensors.right) {
+      this.isTouching.right = true;
+      if (pair.separation > 0.5) this.sprite.x -= pair.separation - 0.5;
+    } else if (bodyA === this.sensors.bottom) {
+      this.isTouching.ground = true;
+    }
+  }
+
+  resetTouching() {
+    this.isTouching.left = false;
+    this.isTouching.right = false;
+    this.isTouching.ground = false;
   }
 
   freeze() {
     this.sprite.setStatic(true);
   }
 
-  update() {}
+  update() {
+    const sprite = this.sprite;
+    const velocity = sprite.body.velocity;
+    const isRightKeyDown = this.rightInput.isDown();
+    const isLeftKeyDown = this.leftInput.isDown();
+    const isJumpKeyDown = this.jumpInput.isDown();
+    const isOnGround = this.isTouching.ground;
+    const isInAir = !isOnGround;
+
+    // Adjust the movement so that the player is slower in the air
+    const moveForce = isOnGround ? 0.01 : 0.005;
+
+    if (isLeftKeyDown) {
+      sprite.setFlipX(true);
+
+      // Don't let the player push things left if they in the air
+      if (!(isInAir && this.isTouching.left)) {
+        sprite.applyForce({ x: -moveForce, y: 0 });
+      }
+    } else if (isRightKeyDown) {
+      sprite.setFlipX(false);
+
+      // Don't let the player push things right if they in the air
+      if (!(isInAir && this.isTouching.right)) {
+        sprite.applyForce({ x: moveForce, y: 0 });
+      }
+    }
+
+    // Limit horizontal speed, without this the player's velocity would just keep increasing to
+    // absurd speeds. We don't want to touch the vertical velocity though, so that we don't
+    // interfere with gravity.
+    if (velocity.x > 7) sprite.setVelocityX(7);
+    else if (velocity.x < -7) sprite.setVelocityX(-7);
+
+    if (isJumpKeyDown && this.canJump && isOnGround) {
+      sprite.setVelocityY(-11);
+
+      // Add a slight delay between jumps since the bottom sensor will still collide for a few
+      // frames after a jump is initiated
+      this.canJump = false;
+      this.jumpCooldownTimer = this.scene.time.addEvent({
+        delay: 250,
+        callback: () => (this.canJump = true),
+      });
+    }
+  }
 
   destroy() {}
 }
