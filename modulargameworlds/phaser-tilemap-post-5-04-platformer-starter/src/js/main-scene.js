@@ -1,14 +1,14 @@
 import Phaser from "phaser";
 import Player from "./player.js";
 import createRotatingPlatform from "./create-rotating-platform.js";
+import levelJson from "../assets/tilemaps/level.json";
+import kenneyTilset64pxExtruded from "../assets/tilesets/kenney-tileset-64px-extruded.png";
+import images from "../assets/images/*.png";
 
 export default class MainScene extends Phaser.Scene {
   preload() {
-    this.load.tilemapTiledJSON("map", "../assets/tilemaps/level.json");
-    this.load.image(
-      "kenney-tileset-64px-extruded",
-      "../assets/tilesets/kenney-tileset-64px-extruded.png"
-    );
+    this.load.tilemapTiledJSON("map", levelJson);
+    this.load.image("kenney-tileset-64px-extruded", kenneyTilset64pxExtruded);
 
     this.load.image("wooden-plank", "../assets/images/wooden-plank.png");
     this.load.image("block", "../assets/images/block.png");
@@ -20,11 +20,15 @@ export default class MainScene extends Phaser.Scene {
         frameWidth: 32,
         frameHeight: 32,
         margin: 1,
-        spacing: 2
-      }
+        spacing: 2,
+      },
     );
 
-    this.load.atlas("emoji", "../assets/atlases/emoji.png", "../assets/atlases/emoji.json");
+    this.load.atlas(
+      "emoji",
+      "../assets/atlases/emoji.png",
+      "../assets/atlases/emoji.json",
+    );
   }
 
   create() {
@@ -52,7 +56,7 @@ export default class MainScene extends Phaser.Scene {
       fontSize: "18px",
       padding: { x: 10, y: 5 },
       backgroundColor: "#ffffff",
-      fill: "#000000"
+      fill: "#000000",
     });
     help.setScrollFactor(0).setDepth(1000);
   }
