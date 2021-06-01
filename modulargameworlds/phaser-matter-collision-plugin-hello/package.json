@@ -1,0 +1,21 @@
+{
+  "name": "phaser-matter-collision-plugin-hello",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "parcel serve src/index.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "phaser-matter-collision-plugin": "^0.10.2",
+    "matter-js": "^0.17.1",
+    "phaser": "^3.16.2"
+  },
+  "devDependencies": {
+    "eslint": "^7.27.0"
+  }
+}
