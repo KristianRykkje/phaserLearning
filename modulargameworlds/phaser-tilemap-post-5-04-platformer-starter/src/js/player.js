@@ -5,8 +5,44 @@ export default class Player {
   constructor(scene, x, y) {
     this.scene = scene;
 
+    // Create the animations we need from the player spritesheet
+    const anims = scene.anims;
+    anims.create({
+      key: "player-idle",
+      frames: anims.generateFrameNumbers("player", { start: 0, end: 3 }),
+      frameRate: 3,
+      repeat: -1,
+    });
+    anims.create({
+      key: "player-run",
+      frames: anims.generateFrameNumbers("player", { start: 8, end: 15 }),
+      frameRate: 12,
+      repeat: -1,
+    });
+
     // Create the physics-based sprite that we will move around and animate
     this.sprite = scene.matter.add.sprite(0, 0, "player", 0);
+
+    // The player's body is going to be a compound body that looks something like this:
+    //
+    //                  A = main body
+    //
+    //                   +---------+
+    //                   |         |
+    //                 +-+         +-+
+    //       B = left  | |         | |  C = right
+    //    wall sensor  |B|    A    |C|  wall sensor
+    //                 | |         | |
+    //                 +-+         +-+
+    //                   |         |
+    //                   +-+-----+-+
+    //                     |  D  |
+    //                     +-----+
+    //
+    //                D = ground sensor
+    //
+    // The main body is what collides with the world. The sensors are used to determine if the
+    // player is blocked by a wall or standing on the ground.
 
     const { Body, Bodies } = Phaser.Physics.Matter.Matter; // Native Matter modules
     const { width: w, height: h } = this.sprite;
@@ -35,28 +71,6 @@ export default class Player {
       .setFixedRotation() // Sets inertia to infinity so the player can't rotate
       .setPosition(x, y);
 
-    // Create the animations we need from the player spritesheet
-    const anims = scene.anims;
-    anims.create({
-      key: "player-idle",
-      frames: anims.generateFrameNumbers("player", { start: 0, end: 3 }),
-      frameRate: 3,
-      repeat: -1,
-    });
-    anims.create({
-      key: "player-run",
-      frames: anims.generateFrameNumbers("player", { start: 8, end: 15 }),
-      frameRate: 12,
-      repeat: -1,
-    });
-
-    // Track the keys
-    const { LEFT, RIGHT, UP, A, D, W } = Phaser.Input.Keyboard.KeyCodes;
-    this.leftInput = new MultiKey(scene, [LEFT, A]);
-    this.rightInput = new MultiKey(scene, [RIGHT, D]);
-    this.jumpInput = new MultiKey(scene, [UP, W]);
-
-    this.scene.events.on("update", this.update, this);
     // Track which sensors are touching something
     this.isTouching = { left: false, right: false, ground: false };
 
@@ -64,11 +78,9 @@ export default class Player {
     this.canJump = true;
     this.jumpCooldownTimer = null;
 
-    // Before matter's update, reset our record of what surfaces the player is touching.
+    // Before matter's update, reset the player's count of what surfaces it is touching.
     scene.matter.world.on("beforeupdate", this.resetTouching, this);
 
-    // If a sensor just started colliding with something, or it continues to collide with something,
-    // call onSensorCollide
     scene.matterCollision.addOnCollideStart({
       objectA: [this.sensors.bottom, this.sensors.left, this.sensors.right],
       callback: this.onSensorCollide,
@@ -79,9 +91,27 @@ export default class Player {
       callback: this.onSensorCollide,
       context: this,
     });
+
+    // Track the keys
+    const { LEFT, RIGHT, UP, A, D, W } = Phaser.Input.Keyboard.KeyCodes;
+    this.leftInput = new MultiKey(scene, [LEFT, A]);
+    this.rightInput = new MultiKey(scene, [RIGHT, D]);
+    this.jumpInput = new MultiKey(scene, [UP, W]);
+
+    this.destroyed = false;
+    this.scene.events.on("update", this.update, this);
+    this.scene.events.once("shutdown", this.destroy, this);
+    this.scene.events.once("destroy", this.destroy, this);
   }
 
   onSensorCollide({ bodyA, bodyB, pair }) {
+    // Watch for the player colliding with walls/objects on either side and the ground below, so
+    // that we can use that logic inside of update to move the player.
+    // Note: we are using the "pair.separation" here. That number tells us how much bodyA and bodyB
+    // overlap. We want to teleport the sprite away from walls just enough so that the player won't
+    // be able to press up against the wall and use friction to hang in midair. This formula leaves
+    // 0.5px of overlap with the sensor so that the sensor will stay colliding on the next tick if
+    // the player doesn't move.
     if (bodyB.isSensor) return; // We only care about collisions with physical objects
     if (bodyA === this.sensors.left) {
       this.isTouching.left = true;
@@ -105,6 +135,8 @@ export default class Player {
   }
 
   update() {
+    if (this.destroyed) return;
+
     const sprite = this.sprite;
     const velocity = sprite.body.velocity;
     const isRightKeyDown = this.rightInput.isDown();
@@ -112,6 +144,8 @@ export default class Player {
     const isJumpKeyDown = this.jumpInput.isDown();
     const isOnGround = this.isTouching.ground;
     const isInAir = !isOnGround;
+
+    // --- Move the player horizontally ---
 
     // Adjust the movement so that the player is slower in the air
     const moveForce = isOnGround ? 0.01 : 0.005;
@@ -138,6 +172,8 @@ export default class Player {
     if (velocity.x > 7) sprite.setVelocityX(7);
     else if (velocity.x < -7) sprite.setVelocityX(-7);
 
+    // --- Move the player vertically ---
+
     if (isJumpKeyDown && this.canJump && isOnGround) {
       sprite.setVelocityY(-11);
 
@@ -149,7 +185,35 @@ export default class Player {
         callback: () => (this.canJump = true),
       });
     }
+
+    // Update the animation/texture based on the state of the player's state
+    if (isOnGround) {
+      if (sprite.body.force.x !== 0) sprite.anims.play("player-run", true);
+      else sprite.anims.play("player-idle", true);
+    } else {
+      sprite.anims.stop();
+      sprite.setTexture("player", 10);
+    }
   }
 
-  destroy() {}
+  destroy() {
+    // Clean up any listeners that might trigger events after the player is officially destroyed
+    this.scene.events.off("update", this.update, this);
+    this.scene.events.off("shutdown", this.destroy, this);
+    this.scene.events.off("destroy", this.destroy, this);
+    if (this.scene.matter.world) {
+      this.scene.matter.world.off("beforeupdate", this.resetTouching, this);
+    }
+    const sensors = [
+      this.sensors.bottom,
+      this.sensors.left,
+      this.sensors.right,
+    ];
+    this.scene.matterCollision.removeOnCollideStart({ objectA: sensors });
+    this.scene.matterCollision.removeOnCollideActive({ objectA: sensors });
+    if (this.jumpCooldownTimer) this.jumpCooldownTimer.destroy();
+
+    this.destroyed = true;
+    this.sprite.destroy();
+  }
 }
