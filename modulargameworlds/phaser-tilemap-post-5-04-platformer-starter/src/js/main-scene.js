@@ -101,14 +101,6 @@ export default class MainScene extends Phaser.Scene {
       fill: "#000000",
     });
     help.setScrollFactor(0).setDepth(1000);
-
-    // ... this goes after we created the player
-
-    this.unsubscribePlayerCollide = this.matterCollision.addOnCollideStart({
-      objectA: this.player.sprite,
-      callback: this.onPlayerCollide,
-      context: this,
-    });
   }
 
   onPlayerCollide({ gameObjectB }) {
